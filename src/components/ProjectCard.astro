@@ -1,0 +1,31 @@
+---
+interface Props {
+  title: string;
+  blurb: string;
+  tags?: string[];
+  href?: string;
+}
+
+const { title, blurb, tags = [], href } = Astro.props;
+---
+
+<article
+  class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm transition-colors hover:border-accent/40 sm:p-8"
+>
+  <h3 class="text-lg font-semibold text-neutral-900">
+    {href ? <a href={href} class="transition-colors hover:text-accent">{title}</a> : title}
+  </h3>
+  <p class="mt-2 max-w-2xl text-neutral-600">{blurb}</p>
+  {
+    tags.length > 0 && (
+      <ul class="mt-4 flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <li class="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong">
+            {tag}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  {Astro.slots.has('default') && <div class="mt-6"><slot /></div>}
+</article>

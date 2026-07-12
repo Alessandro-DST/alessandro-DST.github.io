@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import About from '../components/About.astro';
+import Projects from '../components/Projects.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Alessandro — Portfolio">
+  <div class="mx-auto max-w-4xl px-6">
+    <Header />
+    <main class="space-y-24 pb-24">
+      <About />
+      <Projects />
+    </main>
+    <Footer />
+  </div>
+</BaseLayout>

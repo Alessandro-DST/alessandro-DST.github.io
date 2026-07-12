@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Single accent color for the whole site — edit these three values to re-theme. */
+  --color-accent: oklch(0.646 0.222 41.116); /* ≈ orange-600 */
+  --color-accent-strong: oklch(0.553 0.195 38.402); /* ≈ orange-700 */
+  --color-accent-soft: oklch(0.954 0.038 75.164); /* ≈ orange-100 */
+}

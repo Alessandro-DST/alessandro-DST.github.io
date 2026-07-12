@@ -1,0 +1,251 @@
+---
+/**
+ * Interactive infrastructure diagram.
+ *
+ * Renders a static SVG from `./data.ts` at build time; a small vanilla script
+ * shows a popup with node details on hover/focus. No framework, no runtime
+ * dependencies, no imports from the rest of the site — the whole `diagram/`
+ * folder is self-contained and can be moved to its own repo as-is.
+ */
+import { diagram, NODE_TYPE_LABELS } from './data';
+
+const NODE_W = 120;
+const NODE_H = 56;
+
+const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
+
+const edges = diagram.edges.map((edge) => {
+  const from = nodeById.get(edge.from);
+  const to = nodeById.get(edge.to);
+  if (!from || !to) {
+    throw new Error(`Diagram edge references unknown node: ${edge.from} -> ${edge.to}`);
+  }
+  return { label: edge.label, x1: from.x, y1: from.y, x2: to.x, y2: to.y };
+});
+---
+
+<figure class="infra-diagram" data-diagram-root>
+  <svg
+    viewBox={`0 0 ${diagram.width} ${diagram.height}`}
+    role="img"
+    aria-label="Network diagram: nodes connected by links, from the internet uplink down to the local servers and devices."
+  >
+    <g class="edges">
+      {
+        edges.map((edge) => (
+          <>
+            <line x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2} />
+            {edge.label && (
+              <text class="edge-label" x={(edge.x1 + edge.x2) / 2 + 8} y={(edge.y1 + edge.y2) / 2}>
+                {edge.label}
+              </text>
+            )}
+          </>
+        ))
+      }
+    </g>
+    <g>
+      {
+        diagram.nodes.map((node) => (
+          <g
+            class="node"
+            data-node
+            data-label={node.label}
+            data-type={NODE_TYPE_LABELS[node.type]}
+            data-tech={node.tech.join('|')}
+            tabindex="0"
+            role="img"
+            aria-label={`${node.label} — ${NODE_TYPE_LABELS[node.type]}${node.tech.length ? `. ${node.tech.join(', ')}` : ''}`}
+            transform={`translate(${node.x - NODE_W / 2}, ${node.y - NODE_H / 2})`}
+          >
+            <rect class={`box box-${node.type}`} width={NODE_W} height={NODE_H} rx="10" />
+            <text class="node-label" x={NODE_W / 2} y={NODE_H / 2 - 4}>
+              {node.label}
+            </text>
+            <text class="node-type" x={NODE_W / 2} y={NODE_H / 2 + 14}>
+              {NODE_TYPE_LABELS[node.type]}
+            </text>
+          </g>
+        ))
+      }
+    </g>
+  </svg>
+
+  <div class="tooltip" data-tooltip hidden aria-hidden="true">
+    <p class="tooltip-title" data-tooltip-title></p>
+    <p class="tooltip-type" data-tooltip-type></p>
+    <p class="tooltip-tech" data-tooltip-tech></p>
+  </div>
+
+  <figcaption>Hover or focus a node for details.</figcaption>
+</figure>
+
+<style>
+  .infra-diagram {
+    /* Falls back to fixed values so the component also works outside this site. */
+    --diagram-accent: var(--color-accent, #ea580c);
+    --diagram-accent-soft: var(--color-accent-soft, #ffedd5);
+    --diagram-line: #d4d4d4;
+    --diagram-text: #171717;
+    --diagram-muted: #737373;
+
+    position: relative;
+    margin: 0;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .edges line {
+    stroke: var(--diagram-line);
+    stroke-width: 1.5;
+  }
+
+  .edge-label {
+    font-size: 11px;
+    fill: var(--diagram-muted);
+  }
+
+  .node {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .box {
+    fill: #ffffff;
+    stroke: var(--diagram-line);
+    stroke-width: 1.5;
+    transition: stroke 0.15s ease;
+  }
+
+  .node:hover .box,
+  .node:focus-visible .box {
+    stroke: var(--diagram-accent);
+  }
+
+  .node:focus-visible .box {
+    stroke-width: 2.5;
+  }
+
+  .box-firewall,
+  .box-vpn {
+    fill: var(--diagram-accent-soft);
+  }
+
+  .node-label {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--diagram-text);
+    text-anchor: middle;
+  }
+
+  .node-type {
+    font-size: 11px;
+    fill: var(--diagram-muted);
+    text-anchor: middle;
+  }
+
+  .tooltip {
+    position: absolute;
+    z-index: 10;
+    width: max-content;
+    max-width: 15rem;
+    pointer-events: none;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+  }
+
+  .tooltip-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--diagram-text);
+  }
+
+  .tooltip-type {
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    color: var(--diagram-muted);
+  }
+
+  .tooltip-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .tooltip-tech :global(span) {
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: var(--diagram-accent-soft);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--diagram-text);
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--diagram-muted);
+  }
+</style>
+
+<script>
+  function initDiagram(root: HTMLElement) {
+    const tooltip = root.querySelector<HTMLElement>('[data-tooltip]');
+    const title = root.querySelector<HTMLElement>('[data-tooltip-title]');
+    const type = root.querySelector<HTMLElement>('[data-tooltip-type]');
+    const tech = root.querySelector<HTMLElement>('[data-tooltip-tech]');
+    if (!tooltip || !title || !type || !tech) return;
+
+    function show(node: SVGGElement) {
+      title!.textContent = node.dataset.label ?? '';
+      type!.textContent = node.dataset.type ?? '';
+
+      const tags = node.dataset.tech ? node.dataset.tech.split('|') : [];
+      tech!.replaceChildren(
+        ...tags.map((tag) => {
+          const span = document.createElement('span');
+          span.textContent = tag;
+          return span;
+        })
+      );
+      tech!.hidden = tags.length === 0;
+
+      // Unhide first so the tooltip can be measured, then position it above
+      // the node (or below when there is no room), clamped to the diagram.
+      tooltip!.hidden = false;
+      const rootRect = root.getBoundingClientRect();
+      const nodeRect = node.getBoundingClientRect();
+      const tooltipRect = tooltip!.getBoundingClientRect();
+
+      let left = nodeRect.left - rootRect.left + nodeRect.width / 2 - tooltipRect.width / 2;
+      left = Math.max(4, Math.min(left, rootRect.width - tooltipRect.width - 4));
+
+      let top = nodeRect.top - rootRect.top - tooltipRect.height - 10;
+      if (top < 0) top = nodeRect.bottom - rootRect.top + 10;
+
+      tooltip!.style.left = `${left}px`;
+      tooltip!.style.top = `${top}px`;
+    }
+
+    function hide() {
+      tooltip!.hidden = true;
+    }
+
+    for (const node of root.querySelectorAll<SVGGElement>('[data-node]')) {
+      node.addEventListener('mouseenter', () => show(node));
+      node.addEventListener('mouseleave', hide);
+      node.addEventListener('focus', () => show(node));
+      node.addEventListener('blur', hide);
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-diagram-root]').forEach(initDiagram);
+</script>
