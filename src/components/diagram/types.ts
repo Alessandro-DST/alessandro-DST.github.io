@@ -16,7 +16,8 @@ export type NodeType =
   | 'database'
   | 'vpn'
   | 'wifi'
-  | 'client';
+  | 'client'
+  | 'dns';
 
 export interface DiagramNode {
   /** Unique id, referenced by edges. */

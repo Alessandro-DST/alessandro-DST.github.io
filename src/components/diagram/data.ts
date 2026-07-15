@@ -21,6 +21,7 @@ export const NODE_TYPE_LABELS: Record<NodeType, string> = {
   vpn: 'VPN gateway',
   wifi: 'Wi-Fi access point',
   client: 'Client device',
+  dns: 'DNS server',
 };
 
 export const diagram: DiagramData = {
@@ -38,6 +39,7 @@ export const diagram: DiagramData = {
     },
     // --- VPS members ---
     { id: 'wireguard', label: 'VPN Gateway', type: 'vpn', tech: ['WireGuard'], x: 220, y: 400 },
+    { id: 'pihole', label: 'Pi-hole', type: 'dns', tech: ['Docker', 'Ad-blocking'], x: 380, y: 280 },
     { id: 'ospos', label: 'OSPOS', type: 'service', tech: ['Docker'], x: 520, y: 300 },
     { id: 'metabase', label: 'Metabase', type: 'service', tech: ['Docker'], x: 520, y: 400 },
     { id: 'mariadb', label: 'MariaDB', type: 'database', tech: ['Docker'], x: 520, y: 500 },
@@ -67,6 +69,7 @@ export const diagram: DiagramData = {
     { from: 'wireguard', to: 'ospos' },
     { from: 'wireguard', to: 'metabase' },
     { from: 'wireguard', to: 'mariadb' },
+    { from: 'wireguard', to: 'pihole', label:'DNS' },
     { from: 'ospos', to: 'metabase' },
     { from: 'metabase', to: 'mariadb' },
     { from: 'mariadb', to: 'backup' },
@@ -78,7 +81,7 @@ export const diagram: DiagramData = {
     {
       id: 'vps',
       label: 'VPS',
-      nodes: ['wireguard', 'ospos', 'metabase', 'mariadb', 'backup'],
+      nodes: ['wireguard', 'ospos', 'metabase', 'mariadb', 'backup', 'pihole'],
     },
   ],
 };
