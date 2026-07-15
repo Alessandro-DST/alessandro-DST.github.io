@@ -13,6 +13,7 @@ export type NodeType =
   | 'server'
   | 'service'
   | 'storage'
+  | 'database'
   | 'vpn'
   | 'wifi'
   | 'client';
@@ -40,10 +41,24 @@ export interface DiagramEdge {
   label?: string;
 }
 
+export interface DiagramGroup {
+  /** Unique id, never shown to visitors. */
+  id: string;
+  /** Caption drawn in the group's top-left corner. */
+  label: string;
+  /**
+   * `id`s of the member nodes. The group box is the members' bounding box
+   * plus padding, so it follows automatically when members move.
+   */
+  nodes: string[];
+}
+
 export interface DiagramData {
   /** Width/height of the SVG viewBox that node coordinates refer to. */
   width: number;
   height: number;
   nodes: DiagramNode[];
   edges: DiagramEdge[];
+  /** Optional container boxes drawn behind the nodes (e.g. a host machine). */
+  groups?: DiagramGroup[];
 }

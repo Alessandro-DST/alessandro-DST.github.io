@@ -19,6 +19,7 @@ export const diagram: DiagramData = {
   height: 560,  // SVG viewBox height — grow these if you need more room
   nodes: [...],
   edges: [...],
+  groups: [...],  // optional container boxes (e.g. a host machine)
 };
 ```
 
@@ -47,10 +48,30 @@ Straight lines drawn centre-to-centre beneath the nodes. `from`/`to` must
 match node `id`s — the build **fails with an explicit error** if they don't,
 so typos can't ship. The optional `label` is drawn near the line's midpoint.
 
+### Groups
+
+```ts
+groups: [
+  { id: 'vps', label: 'VPS', nodes: ['wireguard', 'ospos', 'metabase', 'mariadb', 'backup'] },
+]
+```
+
+A group draws a dashed container box *behind* its member nodes, with `label`
+as a caption in its top-left corner — use it for "these nodes live inside
+this machine/zone" (a VPS, a LAN segment, a Docker host). The box is computed
+at build time as the members' bounding box plus padding, so **moving a member
+moves the box automatically** — there are no manual rectangle coordinates.
+Unknown member ids fail the build, same as edges. Groups are purely visual:
+they have no popup and don't affect edges.
+
+Nodes not listed in any group are simply drawn outside the boxes. Nested or
+overlapping groups aren't supported — boxes render in array order and may
+overlap visually if their members interleave.
+
 ### Node types
 
 `NodeType` (in `types.ts`):
-`internet · firewall · router · switch · server · service · storage · vpn · wifi · client`
+`internet · firewall · router · switch · server · service · storage · database · vpn · wifi · client`
 
 Each type maps to a human-readable role in `NODE_TYPE_LABELS` (in `data.ts`),
 e.g. `vpn` → "VPN gateway". That text appears under the node label and as the

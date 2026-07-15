@@ -11,8 +11,32 @@ import { diagram, NODE_TYPE_LABELS } from './data';
 
 const NODE_W = 120;
 const NODE_H = 56;
+const GROUP_PAD = 24;
+const GROUP_PAD_TOP = 44; // extra room for the group label
 
 const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
+
+const groups = (diagram.groups ?? []).map((group) => {
+  const members = group.nodes.map((id) => {
+    const node = nodeById.get(id);
+    if (!node) {
+      throw new Error(`Diagram group "${group.id}" references unknown node: ${id}`);
+    }
+    return node;
+  });
+  if (members.length === 0) {
+    throw new Error(`Diagram group "${group.id}" has no member nodes`);
+  }
+  const x = Math.min(...members.map((m) => m.x)) - NODE_W / 2 - GROUP_PAD;
+  const y = Math.min(...members.map((m) => m.y)) - NODE_H / 2 - GROUP_PAD_TOP;
+  return {
+    label: group.label,
+    x,
+    y,
+    width: Math.max(...members.map((m) => m.x)) + NODE_W / 2 + GROUP_PAD - x,
+    height: Math.max(...members.map((m) => m.y)) + NODE_H / 2 + GROUP_PAD - y,
+  };
+});
 
 const edges = diagram.edges.map((edge) => {
   const from = nodeById.get(edge.from);
@@ -30,6 +54,25 @@ const edges = diagram.edges.map((edge) => {
     role="img"
     aria-label="Network diagram: nodes connected by links, from the internet uplink down to the local servers and devices."
   >
+    <g>
+      {
+        groups.map((group) => (
+          <>
+            <rect
+              class="group-box"
+              x={group.x}
+              y={group.y}
+              width={group.width}
+              height={group.height}
+              rx="14"
+            />
+            <text class="group-label" x={group.x + 14} y={group.y + 26}>
+              {group.label}
+            </text>
+          </>
+        ))
+      }
+    </g>
     <g class="edges">
       {
         edges.map((edge) => (
@@ -97,6 +140,21 @@ const edges = diagram.edges.map((edge) => {
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  .group-box {
+    fill: #fafafa;
+    stroke: var(--diagram-line);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+  }
+
+  .group-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    fill: var(--diagram-muted);
   }
 
   .edges line {

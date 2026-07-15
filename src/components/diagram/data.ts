@@ -2,9 +2,9 @@
  * Diagram content — edit this file to change the diagram, no code changes needed.
  *
  * ⚠ SANITIZED DATA ONLY. This file is published on a public website from a
- * public repository. Never put real IP addresses, hostnames, credentials,
- * internal domain names or any other private configuration detail in here.
- * Generic labels and product names only.
+ * public repository. Never put real IP addresses, hostnames, ports,
+ * credentials, interface names, internal domain names or any other private
+ * configuration detail in here. Generic labels and product names only.
  */
 import type { DiagramData, NodeType } from './types';
 
@@ -17,6 +17,7 @@ export const NODE_TYPE_LABELS: Record<NodeType, string> = {
   server: 'Server',
   service: 'Service',
   storage: 'Storage',
+  database: 'Database',
   vpn: 'VPN gateway',
   wifi: 'Wi-Fi access point',
   client: 'Client device',
@@ -24,26 +25,60 @@ export const NODE_TYPE_LABELS: Record<NodeType, string> = {
 
 export const diagram: DiagramData = {
   width: 900,
-  height: 560,
+  height: 720,
   nodes: [
-    { id: 'internet', label: 'Internet', type: 'internet', tech: ['ISP modem'], x: 450, y: 60 },
-    { id: 'firewall', label: 'Firewall', type: 'firewall', tech: ['OPNsense'], x: 450, y: 170 },
-    { id: 'router', label: 'Router', type: 'router', tech: ['MikroTik'], x: 450, y: 280 },
-    { id: 'switch', label: 'Core Switch', type: 'switch', tech: ['Managed L2'], x: 450, y: 390 },
-    { id: 'web', label: 'Web Server', type: 'server', tech: ['nginx', 'Debian'], x: 130, y: 500 },
-    { id: 'app', label: 'App Server', type: 'server', tech: ['Docker', 'Node.js'], x: 290, y: 500 },
-    { id: 'nas', label: 'NAS', type: 'storage', tech: ['TrueNAS', 'ZFS'], x: 450, y: 500 },
-    { id: 'vpn', label: 'VPN Gateway', type: 'vpn', tech: ['WireGuard'], x: 610, y: 500 },
-    { id: 'wifi', label: 'Wi-Fi AP', type: 'wifi', tech: ['UniFi'], x: 770, y: 500 },
+    { id: 'internet', label: 'Internet', type: 'internet', tech: [], x: 220, y: 50 },
+    {
+      id: 'firewall',
+      label: 'Firewall',
+      type: 'firewall',
+      tech: ['Deny-all inbound', 'VPN-only'],
+      x: 220,
+      y: 150,
+    },
+    // --- VPS members ---
+    { id: 'wireguard', label: 'VPN Gateway', type: 'vpn', tech: ['WireGuard'], x: 220, y: 400 },
+    { id: 'ospos', label: 'OSPOS', type: 'service', tech: ['Docker'], x: 520, y: 300 },
+    { id: 'metabase', label: 'Metabase', type: 'service', tech: ['Docker'], x: 520, y: 400 },
+    { id: 'mariadb', label: 'MariaDB', type: 'database', tech: ['Docker'], x: 520, y: 500 },
+    {
+      id: 'backup',
+      label: 'Backup Pipeline',
+      type: 'service',
+      tech: ['Encrypted dumps'],
+      x: 770,
+      y: 500,
+    },
+    // --- VPN clients ---
+    { id: 'laptop', label: 'Laptop', type: 'client', tech: ['WireGuard client'], x: 110, y: 650 },
+    { id: 'phone', label: 'Phone', type: 'client', tech: ['WireGuard client'], x: 300, y: 650 },
+    {
+      id: 'pos',
+      label: 'POS Tablets',
+      type: 'client',
+      tech: ['WireGuard client'],
+      x: 490,
+      y: 650,
+    },
   ],
   edges: [
     { from: 'internet', to: 'firewall', label: 'WAN' },
-    { from: 'firewall', to: 'router' },
-    { from: 'router', to: 'switch' },
-    { from: 'switch', to: 'web' },
-    { from: 'switch', to: 'app' },
-    { from: 'switch', to: 'nas' },
-    { from: 'switch', to: 'vpn' },
-    { from: 'switch', to: 'wifi' },
+    { from: 'firewall', to: 'wireguard', label: 'VPN port only' },
+    { from: 'wireguard', to: 'ospos' },
+    { from: 'wireguard', to: 'metabase' },
+    { from: 'wireguard', to: 'mariadb' },
+    { from: 'ospos', to: 'metabase' },
+    { from: 'metabase', to: 'mariadb' },
+    { from: 'mariadb', to: 'backup' },
+    { from: 'laptop', to: 'wireguard' },
+    { from: 'phone', to: 'wireguard', label: 'VPN tunnel' },
+    { from: 'pos', to: 'wireguard' },
+  ],
+  groups: [
+    {
+      id: 'vps',
+      label: 'VPS',
+      nodes: ['wireguard', 'ospos', 'metabase', 'mariadb', 'backup'],
+    },
   ],
 };
