@@ -49,6 +49,7 @@ const edges = diagram.edges.map((edge) => {
 ---
 
 <figure class="infra-diagram" data-diagram-root>
+  <div class="scroller" data-diagram-scroller>
   <svg
     viewBox={`0 0 ${diagram.width} ${diagram.height}`}
     role="img"
@@ -113,6 +114,7 @@ const edges = diagram.edges.map((edge) => {
       }
     </g>
   </svg>
+  </div>
 
   <div class="tooltip" data-tooltip hidden aria-hidden="true">
     <p class="tooltip-title" data-tooltip-title></p>
@@ -120,7 +122,11 @@ const edges = diagram.edges.map((edge) => {
     <p class="tooltip-tech" data-tooltip-tech></p>
   </div>
 
-  <figcaption>Hover or focus a node for details.</figcaption>
+  <figcaption>
+    Hover or tap a node for details.<span class="scroll-hint">
+      Swipe sideways to see the whole diagram.</span
+    >
+  </figcaption>
 </figure>
 
 <style>
@@ -136,10 +142,26 @@ const edges = diagram.edges.map((edge) => {
     margin: 0;
   }
 
+  .scroller {
+    overflow-x: auto;
+  }
+
   svg {
     display: block;
     width: 100%;
     height: auto;
+    /* Below this width the diagram scrolls sideways instead of shrinking further. */
+    min-width: 700px;
+  }
+
+  .scroll-hint {
+    display: none;
+  }
+
+  @media (max-width: 800px) {
+    .scroll-hint {
+      display: inline;
+    }
   }
 
   .group-box {
@@ -296,6 +318,11 @@ const edges = diagram.edges.map((edge) => {
     function hide() {
       tooltip!.hidden = true;
     }
+
+    // A tooltip anchored to a pre-scroll position would float mid-air while panning.
+    root
+      .querySelector('[data-diagram-scroller]')
+      ?.addEventListener('scroll', hide, { passive: true });
 
     for (const node of root.querySelectorAll<SVGGElement>('[data-node]')) {
       node.addEventListener('mouseenter', () => show(node));
